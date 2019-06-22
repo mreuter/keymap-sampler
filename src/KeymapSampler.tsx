@@ -33,9 +33,12 @@ const init = (eventSource: EventTarget, handler: (event: Event) => void) => {
   }
 };
 
-const keyState = (event: KeyboardEvent, shift: boolean, alt: boolean) => (
-  !event.ctrlKey && !event.metaKey && (event.shiftKey === shift) && (event.altKey === alt)
-);
+const keyState = (event: KeyboardEvent, shift: boolean, alt: boolean) => {
+  if (shift && alt) return event.getModifierState('Shift') && event.getModifierState('AltGraph');
+  if (shift) return event.getModifierState('Shift') && !event.getModifierState('AltGraph');
+  if (alt) return !event.getModifierState('Shift') && event.getModifierState('AltGraph');
+  return !event.getModifierState('Shift') && !event.getModifierState('AltGraph');
+};
 
 const optimizeKey = (key: Key) => {
   const result = key;
@@ -60,7 +63,7 @@ export const KeymapSampler = () => {
         ...prevState.keymap,
         [event.code]: optimizeKey({
           keyCode: event.keyCode,
-          ...(prevState.keymap[event.code] || { unmodified: event.key }),
+          ...(prevState.keymap[event.code] || {}),
           ...(keyState(event, false, false) ? { unmodified: event.key } : {}),
           ...(keyState(event, true, false) ? { withShift: event.key } : {}),
           ...(keyState(event, false, true) ? { withAltGraph: event.key } : {}),
